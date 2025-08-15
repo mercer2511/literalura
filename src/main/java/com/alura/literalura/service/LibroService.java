@@ -1,6 +1,5 @@
 package com.alura.literalura.service;
 
-import com.alura.literalura.dto.LibroDTO;
 import com.alura.literalura.model.*;
 import com.alura.literalura.repository.AutorRepository;
 import com.alura.literalura.repository.IdiomaRepository;
@@ -16,10 +15,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class LibroService {
-    private Scanner teclado = new Scanner(System.in);
+    private final Scanner teclado = new Scanner(System.in);
     private final ConsumoAPI consumoAPI = new ConsumoAPI();
     private final ConvierteDatos conversor = new ConvierteDatos();
-    private final String URL_BASE = "https://gutendex.com/books/";
 
     @Autowired
     private IdiomaRepository idiomaRepository;
@@ -32,6 +30,7 @@ public class LibroService {
 
     private Optional<DatosLibros> obtenerDatos() {
         var tituloLibro = teclado.nextLine();
+        String URL_BASE = "https://gutendex.com/books/";
         var json = consumoAPI.obtenerDatos(URL_BASE + "?search=" + tituloLibro.replace(" ", "+"));
         var datosBusqueda = conversor.obtenerDatos(json, Datos.class);
 
@@ -47,8 +46,7 @@ public class LibroService {
                         .orElseGet(() -> idiomaRepository.save(idioma)))
                 .collect(Collectors.toSet());
         libro.setIdiomas(idiomas);
-
-        // Evitar duplicados de autores (ajusta el método según tus necesidades)
+        // Evitar duplicados de autores
         Set<Autor> autores = libro.getDatosAutor().stream()
                 .map(autor -> autorRepository
                         .findByNombreAndFechaDeNacimientoAndFechaDeFallecimiento(
@@ -58,6 +56,18 @@ public class LibroService {
         libro.setDatosAutor(autores);
 
         libroRepository.save(libro);
+    }
+
+    private void imprimirLibros(List<Libro> libros, String mensajeVacio) {
+        if (libros.isEmpty()) {
+            System.out.println(mensajeVacio);
+        } else {
+            libros.forEach(libro -> {
+                System.out.println("-----------LIBRO-----------");
+                System.out.println(libro);
+                System.out.println("---------------------------");
+            });
+        }
     }
 
     public void buscarLibroPorTitulo() {
@@ -74,28 +84,53 @@ public class LibroService {
         }
     }
 
-    public List<LibroDTO> convierteDatos(List<Libro> libro) {
-        return libro.stream()
-                .map(l -> new LibroDTO(
-                        l.getId(),
-                        l.getIdGutendex(),
-                        l.getTitulo(),
-                        l.getNumeroDeDescargas()
-                ))
-                .collect(Collectors.toList());
-    }
-
     public void mostrarLibrosRegistrados() {
         List<Libro> libros = libroRepository.findAllWithAutoresAndIdiomas();
-        if (libros.isEmpty()) {
-            System.out.println("No hay libros registrados.");
+        imprimirLibros(libros, "No hay libros registrados.");
+    }
+
+
+    private void imprimirAutores(List<Autor> autores, String mensajeVacio) {
+        if (autores.isEmpty()) {
+            System.out.println(mensajeVacio);
         } else {
-            libros.forEach(libro -> {
-                System.out.println("-----------LIBRO-----------");
-                System.out.println(libro);
+            autores.forEach(autor -> {
+                System.out.println("---------------------------");
+                System.out.println("Autor: " + autor.getNombre());
+                System.out.println("Fecha de Nacimiento: " + autor.getFechaDeNacimiento());
+                System.out.println("Fecha de Fallecimiento: " + autor.getFechaDeFallecimiento());
+                System.out.println("Libros:");
+                if (autor.getLibros().isEmpty()) {
+                    System.out.println("  Ninguno");
+                } else {
+                    autor.getLibros().forEach(libro ->
+                            System.out.println("  - " + libro.getTitulo())
+                    );
+                }
                 System.out.println("---------------------------");
             });
         }
     }
 
+    public void mostrarAutoresRegistrados() {
+        var autores = autorRepository.findAllWithLibros();
+        imprimirAutores(autores, "No hay autores registrados.");
+    }
+
+    public void mostrarAutoresVivosEnFecha(Integer fecha) {
+        var autores = autorRepository.findAutoresVivosEnFecha(fecha);
+        imprimirAutores(autores, "No hay autores vivos en el año " + fecha + ".");
+    }
+
+    public List<Idioma> obtenerIdiomasDisponibles() {
+        return idiomaRepository.findAll();
+    }
+
+    public void mostrarLibrosPorIdioma(String codigo) {
+        var idioma = idiomaRepository.findByCodigo(codigo);
+        var libros = libroRepository.encontrarLibrosPorIdioma(codigo);
+        System.out.println("Libros en " + idioma.get().getNombre() + ":");
+        imprimirLibros(libros, "No hay libros en " + idioma.get().getNombre() + ".");
+
+    }
 }

@@ -40,8 +40,8 @@ public class Principal {
             switch (opcion) {
                 case 1 -> libroService.buscarLibroPorTitulo();
                 case 2 -> libroService.mostrarLibrosRegistrados();
-                case 3 -> listarAutoresRegistrados();
-                case 4 -> listarAutoresVivosAño();
+                case 3 -> libroService.mostrarAutoresRegistrados();
+                case 4 -> listarAutoresVivosEnFecha();
                 case 5 -> listarLibrosPorIdioma();
                 case 0 -> System.out.println("Cerrando la aplicación...");
                 default -> System.out.println("Opción inválida");
@@ -49,15 +49,41 @@ public class Principal {
         }
     }
 
-    private void listarAutoresRegistrados() {
-        System.out.println("Funcionalidad no implementada aún.");
-    }
-
-    private void listarAutoresVivosAño() {
-        System.out.println("Funcionalidad no implementada aún.");
+    private void listarAutoresVivosEnFecha() {
+        System.out.print("Introduce el año: ");
+        if (teclado.hasNextInt()) {
+            int fecha = teclado.nextInt();
+            teclado.nextLine();
+            libroService.mostrarAutoresVivosEnFecha(fecha);
+        } else {
+            System.out.println("Año inválido.");
+            teclado.nextLine();
+        }
     }
 
     private void listarLibrosPorIdioma() {
-        System.out.println("Funcionalidad no implementada aún.");
+        var idiomas = libroService.obtenerIdiomasDisponibles();
+        if (idiomas.isEmpty()) {
+            System.out.println("No hay idiomas registrados.");
+            return;
+        }
+        System.out.println("Idiomas disponibles:");
+        for (int i = 0; i < idiomas.size(); i++) {
+            System.out.println((i + 1) + " - " + idiomas.get(i).getNombre());
+        }
+        System.out.print("Seleccione un idioma: ");
+        if (teclado.hasNextInt()) {
+            int opcion = teclado.nextInt();
+            teclado.nextLine();
+            if (opcion < 1 || opcion > idiomas.size()) {
+                System.out.println("Opción inválida.");
+                return;
+            }
+            var idiomaSeleccionado = idiomas.get(opcion - 1);
+            libroService.mostrarLibrosPorIdioma(idiomaSeleccionado.getCodigo());
+        } else {
+            System.out.println("Opción inválida.");
+            teclado.nextLine();
+        }
     }
 }

@@ -58,7 +58,7 @@ public class Idioma {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Idioma idioma = (Idioma) o;
-        return idioma != null && codigo.equals(idioma.codigo);
+        return codigo.equals(idioma.codigo);
     }
 
     @Override
